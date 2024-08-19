@@ -162,6 +162,8 @@ class Projection extends Component {
   }
   updateLassoPoints() {
     const { mnist_embeddings } = this.props;
+    if (!mnist_embeddings || mnist_embeddings.length === 0) return;
+
     const lassoPoints = mnist_embeddings.map(embedding => {
       const vector = new THREE.Vector3(embedding[0], embedding[1], 0);
       vector.project(this.camera);
@@ -170,8 +172,9 @@ class Projection extends Component {
         y: (-vector.y + 1) * this.props.height / 2,
       };
     });
-    this.props.updateLassoPoints(lassoPoints);
-  }
+    if (!_.isEqual(this.state.lassoPoints, lassoPoints)) {
+      this.props.updateLassoPoints(lassoPoints);
+  }  }
   handleLassoComplete(selectedPoints) {
     const selectedIndices = selectedPoints.map(point => {
         return this.state.lassoPoints.findIndex(p => p.x === point.x && p.y === point.y);
@@ -577,8 +580,8 @@ class Projection extends Component {
   }
 
   componentDidUpdate(prevProps) {
-    let { width, height } = this.props
-    if (width !== prevProps.width || height !== prevProps.height) {
+    let { width, height, algorithm_choice  } = this.props
+    if (width !== prevProps.width || height !== prevProps.height || algorithm_choice !== prevProps.algorithm_choice) {
       this.handleResize(width, height)
     }
     if (prevProps.algorithm_choice !== this.props.algorithm_choice) {
@@ -588,6 +591,9 @@ class Projection extends Component {
       )
     }
     this.updateLassoPoints();
+    if (algorithm_choice !== prevProps.algorithm_choice) {
+      this.changeEmbeddings(prevProps.algorithm_choice, algorithm_choice);
+  }
   }
 
   componentWillUnmount() {
@@ -596,18 +602,20 @@ class Projection extends Component {
 
   render() {
     let { width, height } = this.props
+    const { lassoPoints, embeddings } = this.state;
+
     return (
       <>
+      <LassoSelector 
+          lassoPoints={lassoPoints} 
+          embeddings={embeddings} 
+          handleLassoComplete={this.handleLassoComplete} 
+      />
             <div
                 style={{ width: width, height: height, overflow: 'hidden' }}
                 ref={mount => {
                     this.mount = mount;
                 }}
-            />
-            <LassoSelector 
-                lassoPoints={lassoPoints} 
-                embeddings={embeddings} 
-                handleLassoComplete={this.handleLassoComplete} 
             />
         </>
 

@@ -44,9 +44,12 @@ class Layout extends Component {
     this.setLassoPoints = this.setLassoPoints.bind(this);
 
   }
-  setLassoPoints(points) {
-    this.setState({ lassoPoints: points });
-  }
+  setLassoPoints = (points) => {
+    if (!_.isEqual(this.state.lassoPoints, points)) {
+        this.setState({ lassoPoints: points });
+    }
+};
+
 
   selectAlgorithm(v) {
     let i = this.props.algorithm_options.indexOf(v)
