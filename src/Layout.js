@@ -3,7 +3,6 @@ import Sidebar from './Sidebar'
 import Projection from './Projection'
 import About from './About'
 import * as _ from 'lodash'
-import LassoSelector from './components/LassoSelector'
 
 // padding constructor
 function p(tb, lr) {
@@ -102,6 +101,21 @@ class Layout extends Component {
   componentWillUnmount() {
     window.removeEventListener('resize', this.setSize)
   }
+  handleLassoComplete = (selectedData) => {
+    this.setState({ selectedData });
+  };
+  
+  downloadData = () => {
+    const { selectedData } = this.state;
+    const blob = new Blob([JSON.stringify(selectedData, null, 2)], { type: 'application/json' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'selected_data.json';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+  
 
   render() {
     let {
@@ -220,18 +234,21 @@ class Layout extends Component {
           />
         </div>
         <div style={main_style}>
-        <div>
-        <Projection
-          {...this.props}
-          updateLassoPoints={this.setLassoPoints}
-        />
-        <LassoSelector
-          points={lassoPoints}
-          data={embeddings}
-          onSelectionComplete={this.handleLassoComplete}
-        />
-        <button onClick={this.downloadData}>Download Metadata</button>
-      </div>
+          <Projection
+            width={main_style.width}
+            height={main_style.height}
+            mnist_embeddings={mnist_embeddings}
+            tsne_mnist_embeddings={tsne_mnist_embeddings}
+            md08_umap_mnist_embeddings={md08_umap_mnist_embeddings}
+            mnist_labels={mnist_labels}
+            color_array={color_array}
+            sidebar_ctx={sidebar_ctx}
+            sidebar_image_size={sidebar_image_size}
+            setHoverIndex={this.setHoverIndex.bind(this)}
+            algorithm_embedding_keys={algorithm_embedding_keys}
+            algorithm_choice={algorithm_choice}
+            updateLassoPoints={this.setLassoPoints}
+          />
         </div>
         {show_about ? (
           <About grem={grem} p={p} toggleAbout={this.toggleAbout} />

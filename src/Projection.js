@@ -3,8 +3,10 @@ import * as THREE from 'three';
 import * as _ from 'lodash'
 import * as d3 from 'd3'
 import * as TWEEN from '@tweenjs/tween.js'
-import { log } from 'three/webgpu'
-
+import LassoSelector from './components/LassoSelector';
+// import { log } from 'three/webgpu'
+// import * as THREE from './three.gpu.js';
+console.log(THREE);
 // Constants for sprite sheets
 let sprite_side = 73
 let sprite_size = sprite_side * sprite_side
@@ -48,7 +50,10 @@ let zoomScaler = input => {
 class Projection extends Component {
   constructor(props) {
     super(props)
-    this.state = {}
+    this.state = {
+      lassoPoints: [],
+        embeddings: this.props.mnist_embeddings || [],
+    }
     this.init = this.init.bind(this)
     this.addPoints = this.addPoints.bind(this)
     this.handleResize = this.handleResize.bind(this)
@@ -57,6 +62,8 @@ class Projection extends Component {
     this.getScaleFromZ = this.getScaleFromZ.bind(this)
     this.getZFromScale = this.getZFromScale.bind(this)
     this.changeEmbeddings = this.changeEmbeddings.bind(this)
+    this.updateLassoPoints = this.updateLassoPoints.bind(this);
+    this.handleLassoComplete = this.handleLassoComplete.bind(this);
   }
 
   changeEmbeddings(prev_choice, new_choice) {
@@ -165,6 +172,15 @@ class Projection extends Component {
     });
     this.props.updateLassoPoints(lassoPoints);
   }
+  handleLassoComplete(selectedPoints) {
+    const selectedIndices = selectedPoints.map(point => {
+        return this.state.lassoPoints.findIndex(p => p.x === point.x && p.y === point.y);
+    });
+    const selectedEmbeddings = selectedIndices.map(index => this.state.embeddings[index]);
+    console.log("Selected Embeddings:", selectedEmbeddings);
+    // You can further process the selected embeddings here.
+}
+
   
   setUpCamera() {
     let { width, height, mnist_embeddings } = this.props
@@ -290,20 +306,22 @@ class Projection extends Component {
         offsets[index + 1] = y
       }
 
-      for (let i = 1, index = 1, l = numVertices; i < l; i++, index += 3) {
+      for (let i = 0, index = 0, l = numVertices; i < l; i++, index += 3) {
+        // console.log('lchunk:', lchunk);
+        // console.log('color_array:', color_array);
+
         let color;
-        // console.log("dadslkjfakjdshf;dhgkds",i)
         if (lchunk && lchunk[i] !== undefined) {
-          console.warn(`lchunk is undefined or missing at index ${i}, using default color`);
-          color = color_array[lchunk[i]];
+          color = color_array[lchunk[i]] || color_array[0]; // Fallback to default color
         } else {
           console.warn(`lchunk is undefined or missing at index ${i}, using default color`);
-          color = color_array[0]; // Default to the first color if lchunk is undefined or empty
+          color = color_array[0];
         }
         colors[index] = color[0] / 255;
         colors[index + 1] = color[1] / 255;
         colors[index + 2] = color[2] / 255;
       }
+      
       
       
       
@@ -569,6 +587,7 @@ class Projection extends Component {
         this.props.algorithm_choice
       )
     }
+    this.updateLassoPoints();
   }
 
   componentWillUnmount() {
@@ -578,12 +597,20 @@ class Projection extends Component {
   render() {
     let { width, height } = this.props
     return (
-      <div
-        style={{ width: width, height: height, overflow: 'hidden' }}
-        ref={mount => {
-          this.mount = mount
-        }}
-      />
+      <>
+            <div
+                style={{ width: width, height: height, overflow: 'hidden' }}
+                ref={mount => {
+                    this.mount = mount;
+                }}
+            />
+            <LassoSelector 
+                lassoPoints={lassoPoints} 
+                embeddings={embeddings} 
+                handleLassoComplete={this.handleLassoComplete} 
+            />
+        </>
+
     )
   }
 }
